@@ -1,0 +1,29 @@
+{
+  "name": "focusdesk",
+  "version": "1.0.0",
+  "description": "FocusDesk — a focused workspace for managing tasks and projects",
+  "private": true,
+  "scripts": {
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "start:backend": "cd backend && npm start",
+    "build:frontend": "cd frontend && npm run build",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend && npm run test:run",
+    "install:all": "cd backend && npm install && cd ../frontend && npm install",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down",
+    "docker:clean": "docker compose down -v"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ayu2k06/AWDF-PROJECT.git"
+  },
+  "keywords": ["productivity", "tasks", "react", "nodejs", "charusat", "awdf"],
+  "author": "Aryan Tada <aryantada@charusat.edu.in>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ayu2k06/AWDF-PROJECT/issues"
+  },
+  "homepage": "https://github.com/ayu2k06/AWDF-PROJECT#readme"
+}

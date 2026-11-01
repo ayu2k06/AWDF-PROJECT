@@ -1,0 +1,135 @@
+name: FocusDesk — CI/CD Pipeline
+
+# ============================================================
+# Week 12: CI/CD Pipeline with GitHub Actions
+# Triggers: Push to main, Pull requests targeting main
+# ============================================================
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ──────────────────────────────────────────────────────────
+  # Job 1: Backend Tests
+  # ──────────────────────────────────────────────────────────
+  backend-tests:
+    name: Backend Tests (Node.js)
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Run backend tests
+        working-directory: ./backend
+        env:
+          NODE_ENV: test
+          JWT_SECRET: test_secret_for_ci_do_not_use_in_production
+        run: npm test
+
+  # ──────────────────────────────────────────────────────────
+  # Job 2: Frontend Build
+  # ──────────────────────────────────────────────────────────
+  frontend-build:
+    name: Frontend Build (Vite + React)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: ./frontend
+        env:
+          VITE_API_URL: /api
+        run: npm run build
+
+      - name: Run frontend component tests
+        working-directory: ./frontend
+        run: npm run test:run
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 7
+
+  # ──────────────────────────────────────────────────────────
+  # Job 3: Lint Check
+  # ──────────────────────────────────────────────────────────
+  lint:
+    name: Lint (Frontend)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Run lint
+        working-directory: ./frontend
+        run: npm run lint
+
+# ============================================================
+# DEMONSTRATION: How to create a failing CI run (Week 12)
+# ============================================================
+# To demonstrate a failing CI run safely:
+#
+# 1. Create a temporary branch:
+#    git checkout -b demo/failing-test
+#
+# 2. Edit backend/src/tests/api.test.js
+#    Change: expect(res.statusCode).toBe(200);
+#    To:     expect(res.statusCode).toBe(999);  // deliberately wrong
+#
+# 3. Push the branch:
+#    git push origin demo/failing-test
+#
+# 4. Open a PR — GitHub Actions will show a RED failing run.
+#
+# 5. Fix the assertion back to 200 and push:
+#    git push origin demo/failing-test
+#    GitHub Actions will now show a GREEN passing run.
+#
+# 6. DO NOT merge the broken commit into main.
+# ============================================================

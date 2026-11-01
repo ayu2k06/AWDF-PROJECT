@@ -1,0 +1,52 @@
+# ============================================================
+# FocusDesk — Docker Compose
+# Week 11: Containerization with Docker and Docker Compose
+# ============================================================
+# Usage:
+#   docker compose up --build          (first run / after changes)
+#   docker compose up -d               (detached/background mode)
+#   docker compose down                (stop and remove containers)
+# ============================================================
+
+services:
+  # ─────────────────────────────────────────────
+  # Backend — Node.js / Express API
+  # ─────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: taskflow-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in the root .env file before starting Compose}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      CORS_ORIGINS: http://localhost:3000,http://localhost:5173
+    ports:
+      - "5000:5000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5000/api/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ─────────────────────────────────────────────
+  # Frontend — React + Vite (Nginx-served build)
+  # ─────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:5000/api
+    container_name: taskflow-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:80"
